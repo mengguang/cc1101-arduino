@@ -8,7 +8,7 @@ uint8_t rx_addr, sender, lqi;
 int8_t rssi_dbm;
 volatile uint8_t cc1101_packet_available;
 
-uint8_t My_addr = 6;
+uint8_t SelfAddress = 6;
 //set ISM Band 1=315MHz; 2=433MHz; 3=868MHz; 4=915MHz
 uint8_t Band = 2;
 uint8_t Channel = 10;
@@ -23,14 +23,13 @@ void setup()
   Serial.begin(115200);
   Serial.println();
 
-  cc1100.begin(My_addr);
+  cc1100.begin(SelfAddress,Band,Channel,Power);
   cc1100.sidle();
 
-  cc1100.set_ISM(Band);
-  cc1100.set_channel(Channel);
-  cc1100.set_output_power_level(Power);
+  // cc1100.set_ISM(Band);
+  // cc1100.set_channel(Channel);
+  // cc1100.set_output_power_level(Power);
 
-  cc1100.show_main_settings();
   cc1100.show_register_settings();
 
   cc1100.receive();

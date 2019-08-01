@@ -356,7 +356,7 @@ uint8_t CC1100::get_debug_level(void)
     return debug_level;
 }
 
-uint8_t CC1100::begin(volatile uint8_t &My_addr)
+uint8_t CC1100::begin(uint8_t SelfAddress, uint8_t Band = 2, uint8_t Channel = 10, uint8_t Power = 0)
 {
     uint8_t partnum, version;
 
@@ -404,12 +404,14 @@ uint8_t CC1100::begin(volatile uint8_t &My_addr)
         uart_puthex_byte(version);
         Serial.println();
     }
+    
     set_mode();
     //set output power amplifier
-    set_output_power_level(0); //set PA to 0dBm as default
-
+    set_output_power_level(Power); //set PA to 0dBm as default
+    set_ISM(Band);
+    set_channel(Channel);
     //set my receiver address
-    set_myaddr(My_addr); //My_Addr from EEPROM to global variable
+    set_myaddr(SelfAddress); 
 
     if (debug_level > 0)
     {
@@ -698,19 +700,23 @@ void CC1100::sent_acknowledge(uint8_t my_addr, uint8_t tx_addr)
 
 uint8_t CC1100::packet_available()
 {
-    if (digitalRead(GDO2) == true) //if RF package received
+    if (digitalRead(GDO2) == HIGH) //if RF package received
     {
         if (spi_read_register(IOCFG2) == 0x06) //if sync word detect mode is used
         {
-            while (digitalRead(GDO2) == true)
-            { //wait till sync word is fully received
-                Serial.println(F("!"));
+            while (digitalRead(GDO2) == HIGH)
+            {
+                //wait till sync word is fully received
+                if (debug_level > 0)
+                {
+                    Serial.print("!");
+                }
+                delay(1);
             }
-        }
-
-        if (debug_level > 0)
-        {
-            //Serial.println("Pkt->:");
+            if (debug_level > 0)
+            {
+                Serial.println();
+            }
         }
         return true;
     }
@@ -764,7 +770,7 @@ uint8_t CC1100::get_payload(uint8_t rxbuffer[], uint8_t &pktlen, uint8_t &my_add
                 Serial.println();
 
                 Serial.print(F("RSSI:"));
-                Serial.print(rssi_dbm,10);
+                Serial.print(rssi_dbm, 10);
                 Serial.print(F(" "));
                 Serial.print(F("LQI:"));
                 uart_puthex_byte(lqi);
@@ -815,7 +821,7 @@ uint8_t CC1100::check_acknowledge(uint8_t *rxbuffer, uint8_t pktlen, uint8_t sen
             //Serial.println();
             Serial.print(F("ACK! "));
             Serial.print(F("RSSI:"));
-            Serial.print(rssi_dbm,10);
+            Serial.print(rssi_dbm, 10);
             Serial.print(F(" "));
             Serial.print(F("LQI:"));
             uart_puthex_byte(lqi);
@@ -1131,6 +1137,6 @@ void CC1100::spi_write_burst(uint8_t spi_instr, const uint8_t *pArr, uint8_t len
 void CC1100::uart_puthex_byte(const unsigned char b)
 {
     char buffer[3] = {0};
-    snprintf(buffer,sizeof(buffer),"%02X",b);
+    snprintf(buffer, sizeof(buffer), "%02X", b);
     Serial.print(buffer);
 }
